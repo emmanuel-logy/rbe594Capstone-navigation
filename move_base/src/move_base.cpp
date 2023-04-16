@@ -45,6 +45,7 @@
 #include <geometry_msgs/Twist.h>
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <std_msgs/Bool.h>
 
 namespace move_base {
 
@@ -95,6 +96,7 @@ namespace move_base {
     //for commanding the base
     vel_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
     current_goal_pub_ = private_nh.advertise<geometry_msgs::PoseStamped>("current_goal", 0 );
+    goal_reached_pub_ = nh.advertise<std_msgs::Bool>("goal_reached", 1);
 
     ros::NodeHandle action_nh("move_base");
     action_goal_pub_ = action_nh.advertise<move_base_msgs::MoveBaseActionGoal>("goal", 1);
@@ -803,6 +805,8 @@ namespace move_base {
     boost::recursive_mutex::scoped_lock ecl(configuration_mutex_);
     //we need to be able to publish velocity commands
     geometry_msgs::Twist cmd_vel;
+    std_msgs::Bool goal_reached;
+    goal_reached.data = true;
 
     //update feedback to correspond to our curent position
     geometry_msgs::PoseStamped global_pose;
@@ -886,6 +890,7 @@ namespace move_base {
         //check to see if we've reached our goal
         if(tc_->isGoalReached()){
           ROS_DEBUG_NAMED("move_base","Goal reached!");
+          goal_reached_pub_.publish(goal_reached);
           resetState();
 
           //disable the planner thread
